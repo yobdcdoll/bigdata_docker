@@ -31,6 +31,17 @@ RUN yum install -y openssh \
   libaio-devel.x86_64 \
   libnuma*
 
+#定义时区参数
+ENV TZ=Asia/Shanghai
+#设置时区
+RUN ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && echo '$TZ' > /etc/timezone
+#安装必要应用
+RUN yum -y install kde-l10n-Chinese glibc-common
+#设置编码
+RUN localedef -c -f UTF-8 -i zh_CN zh_CN.utf8
+#设置环境变量
+ENV LC_ALL zh_CN.utf8
+
 # ssh without key
 RUN ssh-keygen -t rsa -f ~/.ssh/id_rsa -P ''
 RUN cat ~/.ssh/id_rsa.pub >> ~/.ssh/authorized_keys
@@ -41,12 +52,18 @@ RUN test -f /root/.ssh/authorized_keys || /usr/bin/cp /root/.ssh/id_rsa.pub /roo
 # RUN ssh -o "StrictHostKeyChecking no" root@node1
 
 # mysql
-COPY lib/mysql-community-*.rpm /app/
-RUN rpm -ivh /app/mysql-community-common*.rpm
-RUN rpm -ivh /app/mysql-community-libs*.rpm
-RUN rpm -ivh /app/mysql-community-client*.rpm
-RUN rpm -ivh /app/mysql-community-server*.rpm
+# COPY lib/mysql-community-*.rpm /app/
+# RUN rpm -ivh /app/mysql-community-common*.rpm
+# RUN rpm -ivh /app/mysql-community-libs*.rpm
+# RUN rpm -ivh /app/mysql-community-client*.rpm
+# RUN rpm -ivh /app/mysql-community-server*.rpm
+# RUN mkdir -p /root/data/mysql
+# RUN mkdir -p /var/log/mysql
 COPY conf/mysql/my.cnf /etc/my.cnf
+COPY lib/mysql-8.0.22-el7-x86_64.tar.gz /app/
+RUN mkdir -p /app/mysql
+RUN tar zxvf /app/mysql-8.0.22-el7-x86_64.tar.gz -C /app/mysql/ --strip-components 1
+RUN cp /app/mysql/bin/my_print_defaults /usr/bin/
 
 # jdk
 COPY lib/openjdk-8u41-b04-linux-x64-14_jan_2020.tar.gz /app
